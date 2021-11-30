@@ -76,10 +76,10 @@ def randaugment_train(
         "Contrast",
         "Brightness",
         "Sharpness",
-        "ShearX",
-        "ShearY",
-        "TranslateX",
-        "TranslateY",
+        # "ShearX",
+        # "ShearY",
+        # "TranslateX",
+        # "TranslateY",
     ]
     return transforms.Compose(
         [
@@ -87,7 +87,7 @@ def randaugment_train(
             transforms.Resize((img_size, img_size)),
             RandAugmentation(operators, n_select, level, n_level),
             transforms.RandomHorizontalFlip(),
-            SequentialAugmentation([("Cutout", 0.8, 9)]),
+            # SequentialAugmentation([("Cutout", 0.8, 9)]),
             transforms.ToTensor(),
             transforms.Normalize(
                 DATASET_NORMALIZE_INFO[dataset]["MEAN"],

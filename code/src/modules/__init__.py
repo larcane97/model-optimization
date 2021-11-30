@@ -18,6 +18,7 @@ from src.modules.poolings import MaxPool1dGenerator
 from src.modules.mbconv import MBConvGenerator
 from src.modules.swin import SwinTransformerGenerator
 from src.modules.efficientnet import EfficientNetGenerator
+from src.modules.mbv3 import MBv3SmallGenerator
 
 __all__ = [
     "ModuleGenerator",
@@ -46,5 +47,6 @@ __all__ = [
     "CoAtConvGenerator",
     "MaxPool1dGenerator"
     "SwinTransformerGenerator",
-    "EfficientNetGenerator"
+    "EfficientNetGenerator",
+    'MBv3SmallGenerator'
 ]

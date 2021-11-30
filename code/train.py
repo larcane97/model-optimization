@@ -25,6 +25,7 @@ from timm.scheduler.cosine_lr import CosineLRScheduler
 
 def train(
     model_config: Dict[str, Any],
+    model_weight : str,
     data_config: Dict[str, Any],
     log_dir: str,
     fp16: bool,
@@ -47,6 +48,12 @@ def train(
     if os.path.isfile(model_path):
         model_instance.model.load_state_dict(
             torch.load(model_path, map_location=device)
+        )
+    if model_weight:
+        assert os.path.isfile(model_weight)
+        print(f'>> pretrained model is overwritten by {model_weight}')
+        model_instance.model.load_state_dict(
+            torch.load(model_weight, map_location=device)
         )
     model_instance.model.to(device)
 
@@ -164,6 +171,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--data", default="configs/data/taco.yaml", type=str, help="data config")
     parser.add_argument("--model_name", default="model_name", type=str, help="model name that is shown in wandb")
+    parser.add_argument("--model_weight", default="", type=str, help="model weight applied to model")
     parser.add_argument("--parent_cfg", default="", type=str)
     parser.add_argument("--parent_weights", default="", type=str)
     parser.add_argument('--noisy_train',dest='noisy_train',action='store_true')
@@ -194,6 +202,8 @@ if __name__ == "__main__":
         model_name=args.model_name,
         parent_cfg=args.parent_cfg,
         parent_weights = args.parent_weights,
-        noisy_train=args.noisy_train
+        noisy_train=args.noisy_train,
+        model_weight = args.model_weight
         )
+
 
