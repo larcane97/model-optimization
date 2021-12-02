@@ -34,6 +34,16 @@ CLASSES = [
 ]
 
 
+import torch.nn as nn
+class FP16Model(nn.Module):
+    def __init__(self,model: nn.Module) -> None:
+        super(FP16Model,self).__init__()
+        self.model = model
+        self.model.half()
+
+    def forward(self,x: torch.Tensor) -> torch.Tensor:
+        return self.model(x.half())
+
 class CustomImageFolder(ImageFolder):
     """ImageFolder with filename."""
 
@@ -154,7 +164,7 @@ if __name__ == "__main__":
         type=str,
         help="image folder root. e.g) 'data/test'",
         default='/opt/ml/data/test'
-    )   
+    )  
     args = parser.parse_args()
     assert args.model_dir != '' and args.img_root != '', "'--model_dir' and '--img_root' must be provided."
 
@@ -177,6 +187,7 @@ if __name__ == "__main__":
             torch.load(args.weight, map_location=torch.device("cpu"))
         )
         model = model_instance.model
+    model = FP16Model(model)
 
     # inference
     inference(model, dataloader, args.dst, t0)

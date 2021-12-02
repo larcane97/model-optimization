@@ -20,7 +20,7 @@ AUG_TRAIN_PARAMS:
     n_select: 2
     level: null
 BATCH_SIZE: 64
-EPOCHS: 200
+EPOCHS: 100
 VAL_RATIO: 0.0
 INIT_LR: 0.001
 FP16: True

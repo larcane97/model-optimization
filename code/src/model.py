@@ -3,7 +3,6 @@
 - Author: Jongkuk Lim
 - Contact: lim.jeikei@gmail.com
 """
-
 from typing import Dict, List, Type, Union
 
 import torch

@@ -19,6 +19,8 @@ from src.modules.mbconv import MBConvGenerator
 from src.modules.swin import SwinTransformerGenerator
 from src.modules.efficientnet import EfficientNetGenerator
 from src.modules.mbv3 import MBv3SmallGenerator
+from src.modules.shufflenetv2 import ShuffleNetV2Generator
+from src.modules.shufflenetv2 import ShuffleNetV1Generator
 
 __all__ = [
     "ModuleGenerator",
@@ -48,5 +50,7 @@ __all__ = [
     "MaxPool1dGenerator"
     "SwinTransformerGenerator",
     "EfficientNetGenerator",
-    'MBv3SmallGenerator'
+    'MBv3SmallGenerator',
+    'ShuffleNetV2Generator',
+    "ShuffleNetV2Generator",
 ]

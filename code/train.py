@@ -24,7 +24,7 @@ from src.modules.swin import set_weight_decay
 from timm.scheduler.cosine_lr import CosineLRScheduler
 
 def train(
-    model_config: Dict[str, Any],
+    model_config: Union[Dict[str, Any],torch.nn.Sequential],
     model_weight : str,
     data_config: Dict[str, Any],
     log_dir: str,
@@ -42,21 +42,25 @@ def train(
     with open(os.path.join(log_dir, "model.yml"), "w") as f:
         yaml.dump(model_config, f, default_flow_style=False)
 
-    model_instance = Model(model_config, verbose=True)
+    if isinstance(model_config,dict):
+        model_instance = Model(model_config, verbose=True)
+        model = model_instance.model
+        model.to(device)
+    else:
+        model = model_config.to(device)
+
     model_path = os.path.join(log_dir, "best.pt")
     print(f"Model save path: {model_path}")
-    if os.path.isfile(model_path):
-        model_instance.model.load_state_dict(
-            torch.load(model_path, map_location=device)
-        )
+    # if os.path.isfile(model_path):
+    #     model.load_state_dict(
+    #         torch.load(model_path, map_location=device)
+    #     )
     if model_weight:
         assert os.path.isfile(model_weight)
         print(f'>> pretrained model is overwritten by {model_weight}')
-        model_instance.model.load_state_dict(
+        model.load_state_dict(
             torch.load(model_weight, map_location=device)
         )
-    model_instance.model.to(device)
-
     # Create dataloader
     train_dl, val_dl, test_dl = create_dataloader(data_config)
 
@@ -74,15 +78,15 @@ def train(
     if 'swin' in model_name.split('_')[0]:
         skip = {}
         skip_keywords = {}
-        if hasattr(model_instance.model, 'no_weight_decay'):
-            skip = model_instance.model.no_weight_decay()
-        if hasattr(model_instance.model, 'no_weight_decay_keywords'):
-            skip_keywords = model_instance.model.no_weight_decay_keywords()
-        parameters = set_weight_decay(model_instance.model, skip, skip_keywords)
+        if hasattr(model, 'no_weight_decay'):
+            skip = model.no_weight_decay()
+        if hasattr(model, 'no_weight_decay_keywords'):
+            skip_keywords = model.no_weight_decay_keywords()
+        parameters = set_weight_decay(model, skip, skip_keywords)
     else:
-        parameters = model_instance.model.parameters()
+        parameters = model.parameters()
         
-    # optimizer = torch.optim.SGD(model_instance.model.parameters(), lr=data_config["INIT_LR"], momentum=0.9)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=data_config["INIT_LR"], momentum=0.9)
     optimizer = optim.AdamW(parameters, eps=EPS, betas=BETAS,lr=data_config["INIT_LR"], weight_decay=WEIGHT_DECAY)
     scheduler = CosineLRScheduler(
         optimizer, 
@@ -111,7 +115,7 @@ def train(
     if parent_cfg:
         if noisy_train:
             print('>>>> Setting Noisy Training..')
-            trainer = NSTTrainer(model_instance.model,
+            trainer = NSTTrainer(model,
                 criterion=criterion,
                 optimizer=optimizer,
                 scheduler=scheduler,
@@ -124,7 +128,7 @@ def train(
                 parent_weights=parent_weights)
         else:
             print('>>>> Setting knowledge distillation..')
-            trainer = KLTrainer(model_instance.model,
+            trainer = KLTrainer(model,
                 criterion=criterion,
                 optimizer=optimizer,
                 scheduler=scheduler,
@@ -137,7 +141,7 @@ def train(
                 parent_weights=parent_weights)
     else:
         trainer = TorchTrainer(
-            model=model_instance.model,
+            model=model,
             criterion=criterion,
             optimizer=optimizer,
             scheduler=scheduler,
@@ -154,9 +158,9 @@ def train(
     )
 
     # evaluate model with test set
-    model_instance.model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path))
     test_loss, test_f1, test_acc = trainer.test(
-        model=model_instance.model, test_dataloader=val_dl if val_dl else test_dl
+        model=model, test_dataloader=val_dl if val_dl else test_dl
     )
     return test_loss, test_f1, test_acc
 
@@ -178,7 +182,10 @@ if __name__ == "__main__":
     parser.set_defaults(noisy_train=False)
     args = parser.parse_args()
 
-    model_config = read_yaml(cfg=args.model)
+    if os.path.splitext(args.model)[-1]=='.yaml':
+        model_config = read_yaml(cfg=args.model)
+    else:
+        model_config = torch.load(args.model)
     data_config = read_yaml(cfg=args.data)
 
     data_config["DATA_PATH"] = os.environ.get("SM_CHANNEL_TRAIN", data_config["DATA_PATH"])
